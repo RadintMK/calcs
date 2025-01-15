@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+
+        .calculator {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .number-input {
+            flex: 1;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        input.error {
+            border-color: #e74c3c;
+        }
+
+        select {
+            padding: 12px 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 18px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+        }
+
+        .result {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .history {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            min-height: 60px;
+        }
+
+        .current-result {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .calculate-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .calculate-btn:hover {
+            background: #2980b9;
+        }
+
+        .calculate-btn:active {
+            transform: scale(0.98);
+        }
+
+        @media (max-width: 600px) {
+            .input-group {
+                flex-direction: column;
+            }
+
+            select {
+                width: 100%;
+            }
+
+            .calculator {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="input-group">
+            <div class="number-input">
+                <input type="text" id="number1" placeholder="Первое число">
+                <div class="error-message" id="error1"></div>
+            </div>
+            
+            <select id="operation">
+                <option value="+">+</option>
+                <option value="-">−</option>
+                <option value="*">×</option>
+                <option value="/">÷</option>
+                <option value="**">^</option>
+            </select>
+
+            <div class="number-input">
+                <input type="text" id="number2" placeholder="Второе число">
+                <div class="error-message" id="error2"></div>
+            </div>
+        </div>
+
+        <button class="calculate-btn" onclick="calculate()">Вычислить</button>
+
+        <div class="result">
+            <div class="history" id="history"></div>
+            <div class="current-result" id="current-result">0</div>
+        </div>
+    </div>
+
+    <script>
+        const number1Input = document.getElementById('number1');
+        const number2Input = document.getElementById('number2');
+        const operationSelect = document.getElementById('operation');
+        const history = document.getElementById('history');
+        const currentResult = document.getElementById('current-result');
+        const calculations = [];
+
+        function validateNumber(value, inputElement, errorElement) {
+            inputElement.classList.remove('error');
+            errorElement.textContent = '';
+
+            if (value.trim() === '') {
+                inputElement.classList.add('error');
+                errorElement.textContent = 'Поле не может быть пустым';
+                return false;
+            }
+
+            if (!/^-?\d*\.?\d*$/.test(value)) {
+                inputElement.classList.add('error');
+                errorElement.textContent = 'Введите корректное число';
+                return false;
+            }
+
+            const number = parseFloat(value);
+            if (!isFinite(number)) {
+                inputElement.classList.add('error');
+                errorElement.textContent = 'Некорректное число';
+                return false;
+            }
+
+            return true;
+        }
+
+        function updateHistory() {
+            history.innerHTML = calculations
+                .slice(-3)
+                .join('<br>');
+        }
+
+        function calculate() {
+            const num1 = number1Input.value;
+            const num2 = number2Input.value;
+            const operation = operationSelect.value;
+
+            const isValid1 = validateNumber(num1, number1Input, document.getElementById('error1'));
+            const isValid2 = validateNumber(num2, number2Input, document.getElementById('error2'));
+
+            if (!isValid1 || !isValid2) {
+                return;
+            }
+
+            const n1 = parseFloat(num1);
+            const n2 = parseFloat(num2);
+            let result;
+
+            try {
+                switch (operation) {
+                    case '+':
+                        result = n1 + n2;
+                        break;
+                    case '-':
+                        result = n1 - n2;
+                        break;
+                    case '*':
+                        result = n1 * n2;
+                        break;
+                    case '/':
+                        if (n2 === 0) {
+                            number2Input.classList.add('error');
+                            document.getElementById('error2').textContent = 'Деление на ноль невозможно';
+                            return;
+                        }
+                        result = n1 / n2;
+                        break;
+                    case '**':
+                        result = Math.pow(n1, n2);
+                        break;
+                }
+
+                if (!isFinite(result)) {
+                    currentResult.textContent = 'Ошибка вычисления';
+                    return;
+                }
+
+                const operationSymbol = {
+                    '+': '+',
+                    '-': '−',
+                    '*': '×',
+                    '/': '÷',
+                    '**': '^'
+                }[operation];
+
+                const calculation = `${n1} ${operationSymbol} ${n2} = ${result}`;
+                calculations.push(calculation);
+                updateHistory();
+                currentResult.textContent = result;
+
+            } catch (e) {
+                currentResult.textContent = 'Ошибка вычисления';
+            }
+        }
+
+        // Добавляем обработку клавиши Enter
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                calculate();
+            }
+        });
+
+        // Валидация при вводе
+        number1Input.addEventListener('input', () => {
+            validateNumber(number1Input.value, number1Input, document.getElementById('error1'));
+        });
+
+        number2Input.addEventListener('input', () => {
+            validateNumber(number2Input.value, number2Input, document.getElementById('error2'));
+        });
+    </script>
+</body>
+</html>
