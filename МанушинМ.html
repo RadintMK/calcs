@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f0f0f0;
+        }
+
+        .calculator {
+            background: #d4f3d4;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 400px;
+            width: 95%;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ff6b6b;
+            border-radius: 8px;
+            font-size: 1.2em;
+            background: transparent;
+            outline: none;
+        }
+
+        input:focus {
+            border-style: solid;
+        }
+
+        .error-message {
+            position: absolute;
+            color: #ff6b6b;
+            font-size: 0.8em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .input-wrapper.error input {
+            border-color: #ff6b6b;
+            border-style: solid;
+        }
+
+        .input-wrapper.error .error-message {
+            display: block;
+        }
+
+        .operator-select {
+            width: 50px;
+            padding: 10px;
+            border: 2px dashed #ff6b6b;
+            border-radius: 8px;
+            background: transparent;
+            font-size: 1.2em;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ff6b6b;
+            border-radius: 8px;
+            background: transparent;
+            color: #ff6b6b;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .calculate-btn:hover {
+            border-style: solid;
+        }
+
+        .results {
+            border: 2px dashed #ff6b6b;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 100px;
+        }
+
+        .history-item {
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .current-result {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        /* Мобильная версия */
+        @media (max-width: 480px) {
+            .calculator {
+                padding: 15px;
+                width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .input-group {
+                flex-direction: column;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .input-wrapper {
+                width: 100%;
+            }
+
+            .operator-select {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            input, .operator-select, .calculate-btn {
+                font-size: 1.2em;
+                padding: 15px;
+            }
+
+            .calculate-btn {
+                margin-top: auto;
+                margin-bottom: 20px;
+                padding: 15px;
+            }
+
+            .results {
+                flex-grow: 1;
+                margin-top: auto;
+                font-size: 1.1em;
+                padding: 20px;
+            }
+
+            .error-message {
+                font-size: 1em;
+                position: static;
+                margin-top: 5px;
+            }
+
+            /* Улучшаем отступы для истории результатов */
+            .history-item {
+                margin-bottom: 10px;
+                padding: 5px 0;
+            }
+
+            .current-result {
+                padding: 10px 0;
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="input-group">
+            <div class="input-wrapper">
+                <input type="text" id="number1" placeholder="123" inputmode="numeric">
+                <div class="error-message"></div>
+            </div>
+            <select class="operator-select">
+                <option value="+">+</option>
+                <option value="-">-</option>
+                <option value="*">×</option>
+                <option value="/">÷</option>
+            </select>
+            <div class="input-wrapper">
+                <input type="text" id="number2" placeholder="567" inputmode="numeric">
+                <div class="error-message"></div>
+            </div>
+        </div>
+        <button class="calculate-btn">подсчитать</button>
+        <div class="results"></div>
+    </div>
+
+    <script>
+        class Calculator {
+            constructor() {
+                this.input1 = document.getElementById('number1');
+                this.input2 = document.getElementById('number2');
+                this.operator = document.querySelector('.operator-select');
+                this.calculateBtn = document.querySelector('.calculate-btn');
+                this.resultsDiv = document.querySelector('.results');
+                this.history = [];
+
+                this.calculateBtn.addEventListener('click', () => this.calculate());
+                this.input1.addEventListener('input', () => this.validateInput(this.input1));
+                this.input2.addEventListener('input', () => this.validateInput(this.input2));
+                
+                // Добавляем обработку Enter для удобства
+                document.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.calculate();
+                    }
+                });
+            }
+
+            validateInput(input) {
+                const value = input.value;
+                const wrapper = input.parentElement;
+                const errorDiv = wrapper.querySelector('.error-message');
+                
+                wrapper.classList.remove('error');
+                
+                if (value === '') {
+                    wrapper.classList.add('error');
+                    errorDiv.textContent = 'Поле не может быть пустым';
+                    return false;
+                }
+                
+                if (!/^\d+$/.test(value)) {
+                    wrapper.classList.add('error');
+                    errorDiv.textContent = 'Введите только числа';
+                    return false;
+                }
+                
+                return true;
+            }
+
+            calculate() {
+                if (!this.validateInput(this.input1) || !this.validateInput(this.input2)) {
+                    return;
+                }
+
+                const num1 = parseInt(this.input1.value);
+                const num2 = parseInt(this.input2.value);
+                const op = this.operator.value;
+                let result;
+
+                switch(op) {
+                    case '+':
+                        result = num1 + num2;
+                        break;
+                    case '-':
+                        result = num1 - num2;
+                        break;
+                    case '*':
+                        result = num1 * num2;
+                        break;
+                    case '/':
+                        if (num2 === 0) {
+                            alert('Деление на ноль невозможно');
+                            return;
+                        }
+                        result = num1 / num2;
+                        break;
+                }
+
+                const expression = `${num1} ${op} ${num2} = ${result}`;
+                this.history.push(expression);
+                this.updateResults();
+            }
+
+            updateResults() {
+                this.resultsDiv.innerHTML = '';
+                
+                // Показываем историю операций (бледным цветом)
+                for (let i = 0; i < this.history.length - 1; i++) {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.textContent = this.history[i];
+                    this.resultsDiv.appendChild(historyItem);
+                }
+                
+                // Показываем текущий результат (красным цветом)
+                if (this.history.length > 0) {
+                    const currentResult = document.createElement('div');
+                    currentResult.className = 'current-result';
+                    currentResult.textContent = this.history[this.history.length - 1];
+                    this.resultsDiv.appendChild(currentResult);
+                }
+            }
+        }
+
+        new Calculator();
+    </script>
+</body>
+</html>
