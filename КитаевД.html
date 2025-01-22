@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fafafa;
+        }
+        
+        .calculator {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            border: 3px solid #000;
+            position: relative;
+        }
+        
+        .calculator::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: -8px;
+            bottom: -8px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            z-index: -1;
+        }
+        
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #000;
+            align-items: center;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #000;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            background: #fff;
+        }
+        
+        input:focus {
+            outline: none;
+            background: #fff;
+            box-shadow: 4px 4px 0 #000;
+        }
+        
+        input.error {
+            border-color: #ff4444;
+            background: #fff5f5;
+        }
+        
+        select {
+            padding: 12px;
+            border: 2px solid #000;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            min-width: 60px;
+        }
+        
+        select:focus {
+            outline: none;
+            box-shadow: 4px 4px 0 #000;
+        }
+        
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: #000;
+            color: #fff;
+            border: 2px solid #000;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            background: #fff;
+            color: #000;
+        }
+        
+        .result-history {
+            margin-top: 1.5rem;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 15px;
+            border: 2px solid #000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            color: #666;
+            padding: 8px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .current-result {
+            color: #000;
+            font-weight: 600;
+            padding: 10px 0;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #000;
+            margin-bottom: 10px;
+        }
+        
+        .error-message {
+            color: #ff4444;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 480px) {
+            .calculator {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+        
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+        
+            select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <div class="input-group">
+            <input type="text" id="num1" placeholder="Первое">
+            <select id="operation">
+                <option value="+">+</option>
+                <option value="-">−</option>
+                <option value="*">×</option>
+                <option value="/">÷</option>
+            </select>
+            <input type="text" id="num2" placeholder="Второе">
+        </div>
+        <div class="error-message" id="error"></div>
+        <button onclick="calculate()">Вычислить</button>
+        <div class="result-history" id="history"></div>
+    </div>
+    <script>
+        let history = [];
+
+        function calculate() {
+            clearErrors();
+            const num1 = document.getElementById('num1').value;
+            const num2 = document.getElementById('num2').value;
+            const operation = document.getElementById('operation').value;
+
+            if (!validateInput(num1, 'num1') || !validateInput(num2, 'num2')) {
+                return;
+            }
+
+            const n1 = parseFloat(num1);
+            const n2 = parseFloat(num2);
+            let result;
+
+            try {
+                switch(operation) {
+                    case '+': result = n1 + n2; break;
+                    case '-': result = n1 - n2; break;
+                    case '*': result = n1 * n2; break;
+                    case '/':
+                        if (n2 === 0) throw new Error('Деление на ноль невозможно');
+                        result = n1 / n2;
+                        break;
+                }
+
+                history.unshift(`${n1} ${operation} ${n2} = ${result}`);
+                if (history.length > 5) history.pop();
+                
+                updateHistory();
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function validateInput(value, fieldId) {
+            if (value.trim() === '') {
+                showError('Поле не может быть пустым', fieldId);
+                return false;
+            }
+            if (isNaN(value)) {
+                showError('Введите корректное число', fieldId);
+                return false;
+            }
+            return true;
+        }
+
+        function showError(message, fieldId) {
+            document.getElementById('error').textContent = message;
+            if (fieldId) {
+                document.getElementById(fieldId).classList.add('error');
+            }
+        }
+
+        function clearErrors() {
+            document.getElementById('error').textContent = '';
+            document.getElementById('num1').classList.remove('error');
+            document.getElementById('num2').classList.remove('error');
+        }
+
+        function updateHistory() {
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = history.map((item, index) => 
+                `<div class="${index === 0 ? 'current-result' : 'history-item'}">${item}</div>`
+            ).join('');
+        }
+    </script>
+</body>
+</html>
