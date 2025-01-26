@@ -114,7 +114,6 @@
             font-weight: bold;
         }
 
-        /* Мобильная версия */
         @media (max-width: 480px) {
             .calculator {
                 padding: 15px;
@@ -211,8 +210,7 @@
                 this.calculateBtn.addEventListener('click', () => this.calculate());
                 this.input1.addEventListener('input', () => this.validateInput(this.input1));
                 this.input2.addEventListener('input', () => this.validateInput(this.input2));
-                
-                // Добавляем обработку Enter для удобства
+
                 document.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') {
                         this.calculate();
@@ -224,22 +222,32 @@
                 const value = input.value;
                 const wrapper = input.parentElement;
                 const errorDiv = wrapper.querySelector('.error-message');
-                
+
                 wrapper.classList.remove('error');
-                
+
                 if (value === '') {
                     wrapper.classList.add('error');
                     errorDiv.textContent = 'Поле не может быть пустым';
                     return false;
                 }
-                
-                if (!/^\d+$/.test(value)) {
+
+                if (!/^\d+[.,]?\d*(%?)$/.test(value)) {
                     wrapper.classList.add('error');
-                    errorDiv.textContent = 'Введите только числа';
+                    errorDiv.textContent = 'Введите корректное число или процент';
                     return false;
                 }
-                
+
                 return true;
+            }
+
+            parseValue(value, base = 0) {
+                value = value.replace(',', '.');
+
+                if (value.includes('%')) {
+                    return (parseFloat(value) / 100) * base;
+                }
+
+                return parseFloat(value);
             }
 
             calculate() {
@@ -247,8 +255,8 @@
                     return;
                 }
 
-                const num1 = parseInt(this.input1.value);
-                const num2 = parseInt(this.input2.value);
+                const num1 = this.parseValue(this.input1.value);
+                const num2 = this.parseValue(this.input2.value, num1);
                 const op = this.operator.value;
                 let result;
 
@@ -271,23 +279,23 @@
                         break;
                 }
 
-                const expression = `${num1} ${op} ${num2} = ${result}`;
+                result = result.toFixed(5);
+
+                const expression = `${num1} ${op} ${num2.toFixed(5)} = ${result}`;
                 this.history.push(expression);
                 this.updateResults();
             }
 
             updateResults() {
                 this.resultsDiv.innerHTML = '';
-                
-                // Показываем историю операций (бледным цветом)
+
                 for (let i = 0; i < this.history.length - 1; i++) {
                     const historyItem = document.createElement('div');
                     historyItem.className = 'history-item';
                     historyItem.textContent = this.history[i];
                     this.resultsDiv.appendChild(historyItem);
                 }
-                
-                // Показываем текущий результат (красным цветом)
+
                 if (this.history.length > 0) {
                     const currentResult = document.createElement('div');
                     currentResult.className = 'current-result';
