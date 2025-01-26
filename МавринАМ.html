@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор</title>
     <style>
+        /* Стили остались без изменений */
         * {
             margin: 0;
             padding: 0;
@@ -227,31 +228,20 @@
                 return false;
             }
 
-            if (!/^-?\d*\.?\d*$/.test(value)) {
+            value = value.replace(',', '.');
+
+            if (!/^-?\d*\.?\d*(%?)$/.test(value)) {
                 inputElement.classList.add('error');
                 errorElement.textContent = 'Введите корректное число';
-                return false;
-            }
-
-            const number = parseFloat(value);
-            if (!isFinite(number)) {
-                inputElement.classList.add('error');
-                errorElement.textContent = 'Некорректное число';
                 return false;
             }
 
             return true;
         }
 
-        function updateHistory() {
-            history.innerHTML = calculations
-                .slice(-3)
-                .join('<br>');
-        }
-
         function calculate() {
-            const num1 = number1Input.value;
-            const num2 = number2Input.value;
+            const num1 = number1Input.value.replace(',', '.');
+            const num2 = number2Input.value.replace(',', '.');
             const operation = operationSelect.value;
 
             const isValid1 = validateNumber(num1, number1Input, document.getElementById('error1'));
@@ -261,9 +251,16 @@
                 return;
             }
 
-            const n1 = parseFloat(num1);
-            const n2 = parseFloat(num2);
+            let n1 = parseFloat(num1);
+            let n2;
             let result;
+
+            // Проверка на проценты во втором числе
+            if (num2.includes('%')) {
+                n2 = parseFloat(num2) / 100 * n1;
+            } else {
+                n2 = parseFloat(num2);
+            }
 
             try {
                 switch (operation) {
@@ -302,9 +299,9 @@
                     '**': '^'
                 }[operation];
 
-                const calculation = `${n1} ${operationSymbol} ${n2} = ${result}`;
+                const calculation = `${n1} ${operationSymbol} ${n2.toFixed(5)} = ${result.toFixed(5)}`;
                 calculations.push(calculation);
-                updateHistory();
+                history.innerHTML = calculations.slice(-3).join('<br>');
                 currentResult.textContent = result;
 
             } catch (e) {
